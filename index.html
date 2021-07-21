@@ -1,8 +1,129 @@
-<!-- https://bekkero.github.io/tdf.github.io/ -->
 <!DOCTYPE html>
-<html>
-<body>
-<h1>Hello World</h1>
-<p>Josh has big boobs.</p>
-</body>
-</html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<p>Date</p>
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+<script>
+
+
+function get_number_of_wins_up_to_date (up_to_date_obj_,country_,data_) {
+  counter = 0;
+
+  for (var i = 0; i < data_.length; i++) {
+    var date_obj = new Date(data_[i].Date);
+    var country = data_[i].Winner_Country;   
+    if(country == country_ &&  date_obj.getTime() <= up_to_date_obj_.getTime()){
+      counter = counter + 1;
+    }
+  }
+  return counter;
+}
+
+function get_unique_countries(data_) {
+  unique = [];
+  for (var i = 0; i < data_.length; i++) {
+    if( !unique.includes(data_[i].Winner_Country)) {
+      unique.push(data_[i].Winner_Country);
+    }
+  }
+  return unique;
+}
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 90, left: 40},
+    width = 660 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Parse the Data
+d3.csv("stages_TDF.csv", function(data) {
+
+var country_win_map =new Map();
+var all_possible_countries = get_unique_countries(data);
+//console.log(all_possible_countries.length);
+var all_possible_dates = data.map(function(d) { return new Date(d.Date); });
+
+all_possible_dates.sort(function(a,b){return a - b;});
+
+let k = 0;
+while( k < all_possible_dates.length-2100) {
+  let start_date = all_possible_dates[k];
+    //console.log("processing " + start_date);
+  let innel_array = new Map();
+  for (let i = 0; i < all_possible_countries.length; i++) {
+     country = all_possible_countries[i];
+     let number_of_wins_up_to_date = get_number_of_wins_up_to_date (start_date,country,data);
+     innel_array.set(country,number_of_wins_up_to_date);
+  }
+  country_win_map.set(start_date,innel_array);
+  k = k+1;
+}
+console.log(country_win_map);
+// X axis
+var x = d3.scaleBand()
+  .range([ 0, width ])
+  .domain(data.map(function(d) { return d.Winner_Country; }))
+  .padding(0.2);
+
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
+
+// Add Y axis
+var y = d3.scaleLinear()
+  .domain([0, 1000])
+  .range([ height, 0]);
+svg.append("g")
+  .call(d3.axisLeft(y));
+
+// Bars
+svg.selectAll("mybar")
+  .data(data)
+  .enter()
+  .append("rect")
+    .attr("x", function(d) { return x(d.Winner_Country); })
+    .attr("width", x.bandwidth())
+    .attr("fill", "#69b3a2")
+    // no bar at the beginning thus:
+    .attr("height", function(d) { return height - y(0); }) // always equal to 0
+    .attr("y", function(d) { return y(0); })
+
+
+
+// Animation
+for (let [key, value] of country_win_map) {
+    console.log(key);
+    d3.select("p").text(key);
+    svg.selectAll("rect")
+      .transition()
+      .duration(100)
+      .attr("y", function(d) { 
+        //console.log(value.get(d.Winner_Country));
+        if( !isNaN(y(value.get(d.Winner_Country)))) {
+          return y(value.get(d.Winner_Country)); 
+      }else{ return 0;} })
+      .attr("height", function(d) { 
+        if( !isNaN(y(value.get(d.Winner_Country)))) {
+          return height - y(value.get(d.Winner_Country)); 
+        } else { return 0; }  
+          
+      })
+      .delay(function(d,i){return(i*10)})
+}
+})
+
+</script>
