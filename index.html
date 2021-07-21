@@ -57,7 +57,7 @@ var all_possible_dates = data.map(function(d) { return new Date(d.Date); });
 all_possible_dates.sort(function(a,b){return a - b;});
 
 let k = 0;
-while( k < all_possible_dates.length-2100) {
+while( k < all_possible_dates.length-1800) {
   let start_date = all_possible_dates[k];
     //console.log("processing " + start_date);
   let innel_array = new Map();
