@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <title>History Of Country performance at the Tour De France</title>
-<!-- Load d3.js -->
 
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v5.js"></script>
 <body>
     <header>
       <h1 itemprop="headline">History of Country Performances at the Tour de France<h1>
@@ -28,8 +29,6 @@
 
 <button type="button" onClick=run_animation();>Run Animation!</button>
 
-
-<script src="https://d3js.org/d3.v4.js"></script>
 
 <!-- Create a div where the graph will take place -->
 <div id="my_dataviz"></div>
@@ -67,92 +66,72 @@ function toDateObj(date_str){
   return mydate;
 }
 
-function run_animation() {
+
+var data;
+var country_win_map;
+var all_possible_dates;
+var animation_runs = 0;
+
+function parse_data() {
+    console.log(data);
+    country_win_map = new Map();
+    var all_possible_countries = get_unique_countries(data);
+    all_possible_dates = data.map(function(d) { return toDateObj(d.Date); });
+    all_possible_dates.sort(function(a,b){return a - b;});
   
-  var my_p = d3.select("#my_dataviz")
-  .append("p")
-  .attr("id", "updateable_p")
-  .append("text")
-  .text("Loading data for the animation....");
-  
-  // set the dimensions and margins of the graph
-  var margin = {top: 10, right: 30, bottom: 90, left: 40},
-      width = 660 - margin.left - margin.right,
-      height = 650 - margin.top - margin.bottom;
-
-  // append the svg object to the body of the page
-  var svg = d3.select("#my_dataviz")
-    .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
-
-  
-
-
-  // Parse the Data
-  d3.csv("stages_TDF.csv", function(data) {
-
-  var country_win_map =new Map();
-  var all_possible_countries = get_unique_countries(data);
-  //console.log(all_possible_countries.length);
-  var all_possible_dates = data.map(function(d) { return toDateObj(d.Date); });
-
-  all_possible_dates.sort(function(a,b){return a - b;});
-  //console.log(all_possible_dates);
-
-  let k = 0;
-  while( k < all_possible_dates.length) {
-    let start_date = all_possible_dates[k];
-      //console.log("processing " + start_date);
-    let innel_array = new Map();
-    for (let i = 0; i < all_possible_countries.length; i++) {
-      country = all_possible_countries[i];
-      let number_of_wins_up_to_date = get_number_of_wins_up_to_date (start_date,country,data);
-      innel_array.set(country,number_of_wins_up_to_date);
+    let k = 0;
+    while( k < all_possible_dates.length) {
+      let start_date = all_possible_dates[k];
+     
+      let innel_array = new Map();
+      for (let i = 0; i < all_possible_countries.length; i++) {
+        country = all_possible_countries[i];
+        let number_of_wins_up_to_date = get_number_of_wins_up_to_date (start_date,country,data);
+        innel_array.set(country,number_of_wins_up_to_date);
+      }
+      country_win_map.set(start_date.getTime(),innel_array);
+      k = k+1;
     }
-    country_win_map.set(start_date.getTime(),innel_array);
-    k = k+1;
-  }
-  //console.log(country_win_map);
+}
+
+function setUpAxisAndBars(height, width,svg) {
 
   // X axis
-  var x = d3.scaleBand()
+    var x = d3.scaleBand()
     .range([ 0, width ])
     .domain(data.map(function(d) { return d.Winner_Country; }))
     .padding(0.2);
 
-  svg.append("g")
+    svg.append("g")
     .attr("transform", "translate(0," + height + ")")
     .call(d3.axisBottom(x))
     .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end");
 
-  // Add Y axis
-  var y = d3.scaleLinear()
-    .domain([0, 100])
-    .range([ height, 0]);
-  svg.append("g")
-    .call(d3.axisLeft(y));
+    // Add Y axis
+    var y = d3.scaleLinear()
+      .domain([0, 100])
+      .range([ height, 0]);
+    svg.append("g")
+      .call(d3.axisLeft(y));
 
-  // Bars
-  svg.selectAll("mybar")
-    .data(data)
-    .enter()
-    .append("rect")
-      .attr("x", function(d) { return x(d.Winner_Country); })
-      .attr("width", x.bandwidth())
-      .attr("fill", "#69b3a2")
-      // no bar at the beginning thus:
-      .attr("height", function(d) { return height - y(0); }) // always equal to 0
-      .attr("y", function(d) { return y(0); })
+    // Bars
+    svg.selectAll("mybar")
+      .data(data)
+      .enter()
+      .append("rect")
+        .attr("x", function(d) { return x(d.Winner_Country); })
+        .attr("width", x.bandwidth())
+        .attr("fill", "#69b3a2")
+        // no bar at the beginning thus:
+        .attr("height", function(d) { return height - y(0); }) // always equal to 0
+        .attr("y", function(d) { return y(0); })
+    return [x,y];
+}
 
-
-  // Animation
-    let j = 0;
+function animate(x,y,my_p,svg,height) {
+      let j = 0;
     while( j < all_possible_dates.length) {
       let as_of = all_possible_dates[j];
       
@@ -198,8 +177,62 @@ function run_animation() {
             })
       }
       j = j + 1;
-
     }
+
+}
+var svg;
+var my_p;
+function run_animation() {
+  
+ 
+ 
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 30, bottom: 90, left: 40},
+      width = 660 - margin.left - margin.right,
+      height = 650 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+
+  if( animation_runs == 0 ) { 
+
+  my_p = d3.select("#my_dataviz")
+  .append("p")
+  .attr("id", "updateable_p")
+  .append("text")
+  .text("Loading data for the animation....");
+
+    svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+  }
+
+    // Parse the Data
+  d3.csv("stages_TDF.csv").then(function(data_) {
+     
+    data = data_;
+    parse_data();
+   
+      x_y_arr = setUpAxisAndBars(height,width,svg);
+      x = x_y_arr[0];
+      y = x_y_arr[1];
+      animation_runs = animation_runs + 1;
+
+  // Animation
+    animate(x,y,my_p,svg,height);
+  }).
+  catch (function(error) {
+    d3.select("#my_dataviz").html = "";    
+    svg.selectAll("*").remove();
+    x_y_arr = setUpAxisAndBars(height,width,svg);
+    x = x_y_arr[0];
+    y = x_y_arr[1];
+  
+  // Animation
+    animate(x,y,my_p,svg,height);
   })
 };
 </script>
