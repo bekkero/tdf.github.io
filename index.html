@@ -195,45 +195,51 @@ function run_animation() {
 
   if( animation_runs == 0 ) { 
 
-  my_p = d3.select("#my_dataviz")
-  .append("p")
-  .attr("id", "updateable_p")
-  .append("text")
-  .text("Loading data for the animation....");
+    my_p = d3.select("#my_dataviz")
+    .append("p")
+    .attr("id", "updateable_p")
+    .append("text")
+    .text("Loading data for the animation....");
 
-    svg = d3.select("#my_dataviz")
-    .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
-  }
-
+      svg = d3.select("#my_dataviz")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
     // Parse the Data
-  d3.csv("stages_TDF.csv").then(function(data_) {
-     
-    data = data_;
-    parse_data();
-   
+    d3.csv("stages_TDF.csv").then(function(data_) {
+      
+      data = data_;
+      parse_data();
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
       animation_runs = animation_runs + 1;
 
-  // Animation
-    animate(x,y,my_p,svg,height);
-  }).
-  catch (function(error) {
-    d3.select("#my_dataviz").html = "";    
-    svg.selectAll("*").remove();
-    x_y_arr = setUpAxisAndBars(height,width,svg);
-    x = x_y_arr[0];
-    y = x_y_arr[1];
-  
-  // Animation
-    animate(x,y,my_p,svg,height);
-  })
+    // Animation
+      animate(x,y,my_p,svg,height);
+    }).
+    catch (function(error) {
+      d3.select("#my_dataviz").html = "";    
+      svg.selectAll("*").remove();
+      x_y_arr = setUpAxisAndBars(height,width,svg);
+      x = x_y_arr[0];
+      y = x_y_arr[1];
+    
+    // Animation
+      animate(x,y,my_p,svg,height);
+    })
+  } else {
+      svg.selectAll("*").remove();
+      x_y_arr = setUpAxisAndBars(height,width,svg);
+      x = x_y_arr[0];
+      y = x_y_arr[1];
+    // Animation
+      animate(x,y,my_p,svg,height);
+
+  }
 };
 </script>
 
