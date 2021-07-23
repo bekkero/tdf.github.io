@@ -1,13 +1,41 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-
+<title>History Of Country performance at the Tour De France</title>
 <!-- Load d3.js -->
+
+<body>
+    <header>
+      <h1 itemprop="headline">History of Country Performances at the Tour de France<h1>
+    </header>
+  
+
+ <h2>History of the Tour de France </h2>
+    
+                        <p>Tour de France began in 1903 as a strategy to boost the sales of the newspaper L'Auto that was nearly pushed out of business by Le Vélo. The race proved a success and the organizers made it an annual competition. The only time the race was not held was between 1915-1918 and 1940-1946 because of the First and Second World Wars respectively. Between 1903 and 1967, the race ended at Parc des Princes while from 1968 to 1974, it ended at Piste Municipale. From 1975 to present, the race has ended at the Champs-Élysées. Maurice Garin won the first and second series of the Tour de France but was stripped his second win for cheating.<br> </p>
+        
+                            
+                
+                                        <h2>Tour de France Records<br> </h2>
+        
+        
+                
+                                        <h3>Wins by Country </h3>
+        
+        
+                
+                                        <p>France has the largest number of Tour de France titles. Twenty-three French cyclists have won the title 36 times. France won the inaugural race in 1903 and held the winning title for another 5 years until Luxembourg managed to take the win in 1909. France took the title back in 1910 and 1911 before Belgium began to lead the race with wins in 1912-1914 and 1919-1922. France won again in 1923, from 1930-1934, 1937, 1947, 1953-1957, 1961-1964, 1966-1967, 1975, and 1981-1985. France also leads in number of stage wins with 702. France has the most winning streaks (8) and has the second-longest winning streak with 6 consecutive wins from 1903-1908. Interestingly, France has not won the Tour de France since 1985. <br> </p>
+        
+
+<button type="button" onClick=run_animation();>Run Animation!</button>
+
+
 <script src="https://d3js.org/d3.v4.js"></script>
-<p>Date</p>
+
 <!-- Create a div where the graph will take place -->
 <div id="my_dataviz"></div>
-<script>
 
+
+<script>
 
 function get_number_of_wins_up_to_date (up_to_date_obj_,country_,data_) {
   counter = 0;
@@ -39,128 +67,141 @@ function toDateObj(date_str){
   return mydate;
 }
 
-// set the dimensions and margins of the graph
-var margin = {top: 10, right: 30, bottom: 90, left: 40},
-    width = 660 - margin.left - margin.right,
-    height = 650 - margin.top - margin.bottom;
+function run_animation() {
+  
+  var my_p = d3.select("#my_dataviz")
+  .append("p")
+  .attr("id", "updateable_p")
+  .append("text")
+  .text("Loading data for the animation....");
+  
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 30, bottom: 90, left: 40},
+      width = 660 - margin.left - margin.right,
+      height = 650 - margin.top - margin.bottom;
 
-// append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
 
-// Parse the Data
-d3.csv("stages_TDF.csv", function(data) {
-
-var country_win_map =new Map();
-var all_possible_countries = get_unique_countries(data);
-//console.log(all_possible_countries.length);
-var all_possible_dates = data.map(function(d) { return toDateObj(d.Date); });
-
-all_possible_dates.sort(function(a,b){return a - b;});
-//console.log(all_possible_dates);
-
-let k = 0;
-while( k < all_possible_dates.length) {
-  let start_date = all_possible_dates[k];
-    //console.log("processing " + start_date);
-  let innel_array = new Map();
-  for (let i = 0; i < all_possible_countries.length; i++) {
-     country = all_possible_countries[i];
-     let number_of_wins_up_to_date = get_number_of_wins_up_to_date (start_date,country,data);
-     innel_array.set(country,number_of_wins_up_to_date);
-  }
-  country_win_map.set(start_date.getTime(),innel_array);
-  k = k+1;
-}
-//console.log(country_win_map);
-
-// X axis
-var x = d3.scaleBand()
-  .range([ 0, width ])
-  .domain(data.map(function(d) { return d.Winner_Country; }))
-  .padding(0.2);
-
-svg.append("g")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom(x))
-  .selectAll("text")
-    .attr("transform", "translate(-10,0)rotate(-45)")
-    .style("text-anchor", "end");
-
-// Add Y axis
-var y = d3.scaleLinear()
-  .domain([0, 100])
-  .range([ height, 0]);
-svg.append("g")
-  .call(d3.axisLeft(y));
-
-// Bars
-svg.selectAll("mybar")
-  .data(data)
-  .enter()
-  .append("rect")
-    .attr("x", function(d) { return x(d.Winner_Country); })
-    .attr("width", x.bandwidth())
-    .attr("fill", "#69b3a2")
-    // no bar at the beginning thus:
-    .attr("height", function(d) { return height - y(0); }) // always equal to 0
-    .attr("y", function(d) { return y(0); })
+  
 
 
-// Animation
-  let j = 0;
-  while( j < all_possible_dates.length) {
-    let as_of = all_possible_dates[j];
-    
-    d3.select("p")
-    .transition()
-    .ease(d3.easeLinear)
-    .duration(1000)
-    .text(as_of.getFullYear())
-    .delay(function(d,i){
-          return(j*100)
-          });
+  // Parse the Data
+  d3.csv("stages_TDF.csv", function(data) {
 
-    let day_data = country_win_map.get(as_of.getTime());
-    if (typeof day_data != 'undefined') {    
-      svg.selectAll("rect")
-        .transition()
-        .ease(d3.easeLinear)
-        .duration(1000)
-        .attr("y", function(d) {
-          //let day_data = country_win_map.get(as_of.getTime());   
-          if (typeof day_data != 'undefined') {
-            let day_country_count = day_data.get(d.Winner_Country);
-            if (typeof day_country_count != 'undefined' && day_country_count != 0) {
-             // console.log("asof="+as_of+ " country " + d.Winner_Country + " wins=" + day_country_count);
-              return y(day_country_count); 
-            }else return y(0);
-        }else return y(0); 
-        })
-        .attr("height", function(d) { 
-          //let as_of = new Date(d.Date);
-          //let day_data = country_win_map.get(as_of.getTime());
-          if (typeof day_data != 'undefined') {
-            let day_country_count = day_data.get(d.Winner_Country);
-            if (typeof day_country_count != 'undefined' && day_country_count != 0) {
-              return height - y(day_country_count); 
-            } 
-            else 
-            { return height - y(0); }
-          }else{return height - y(0); }  
-        })
-        .delay(function(d,i){
-          return(j*100)
-          })
+  var country_win_map =new Map();
+  var all_possible_countries = get_unique_countries(data);
+  //console.log(all_possible_countries.length);
+  var all_possible_dates = data.map(function(d) { return toDateObj(d.Date); });
+
+  all_possible_dates.sort(function(a,b){return a - b;});
+  //console.log(all_possible_dates);
+
+  let k = 0;
+  while( k < all_possible_dates.length) {
+    let start_date = all_possible_dates[k];
+      //console.log("processing " + start_date);
+    let innel_array = new Map();
+    for (let i = 0; i < all_possible_countries.length; i++) {
+      country = all_possible_countries[i];
+      let number_of_wins_up_to_date = get_number_of_wins_up_to_date (start_date,country,data);
+      innel_array.set(country,number_of_wins_up_to_date);
     }
-    j = j + 1;
-
+    country_win_map.set(start_date.getTime(),innel_array);
+    k = k+1;
   }
-})
+  //console.log(country_win_map);
 
+  // X axis
+  var x = d3.scaleBand()
+    .range([ 0, width ])
+    .domain(data.map(function(d) { return d.Winner_Country; }))
+    .padding(0.2);
+
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 100])
+    .range([ height, 0]);
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+  // Bars
+  svg.selectAll("mybar")
+    .data(data)
+    .enter()
+    .append("rect")
+      .attr("x", function(d) { return x(d.Winner_Country); })
+      .attr("width", x.bandwidth())
+      .attr("fill", "#69b3a2")
+      // no bar at the beginning thus:
+      .attr("height", function(d) { return height - y(0); }) // always equal to 0
+      .attr("y", function(d) { return y(0); })
+
+
+  // Animation
+    let j = 0;
+    while( j < all_possible_dates.length) {
+      let as_of = all_possible_dates[j];
+      
+      my_p
+      .transition()
+      .ease(d3.easeLinear)
+      .duration(1000)
+      .text(as_of.getFullYear())
+      .delay(function(d,i){
+            return(j*100)
+            });
+
+      let day_data = country_win_map.get(as_of.getTime());
+      if (typeof day_data != 'undefined') {    
+        svg.selectAll("rect")
+          .transition()
+          .ease(d3.easeLinear)
+          .duration(1000)
+          .attr("y", function(d) {
+            //let day_data = country_win_map.get(as_of.getTime());   
+            if (typeof day_data != 'undefined') {
+              let day_country_count = day_data.get(d.Winner_Country);
+              if (typeof day_country_count != 'undefined' && day_country_count != 0) {
+              // console.log("asof="+as_of+ " country " + d.Winner_Country + " wins=" + day_country_count);
+                return y(day_country_count); 
+              }else return y(0);
+          }else return y(0); 
+          })
+          .attr("height", function(d) { 
+            //let as_of = new Date(d.Date);
+            //let day_data = country_win_map.get(as_of.getTime());
+            if (typeof day_data != 'undefined') {
+              let day_country_count = day_data.get(d.Winner_Country);
+              if (typeof day_country_count != 'undefined' && day_country_count != 0) {
+                return height - y(day_country_count); 
+              } 
+              else 
+              { return height - y(0); }
+            }else{return height - y(0); }  
+          })
+          .delay(function(d,i){
+            return(j*100)
+            })
+      }
+      j = j + 1;
+
+    }
+  })
+};
 </script>
+
+</body>
