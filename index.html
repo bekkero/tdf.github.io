@@ -4,6 +4,7 @@
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v5.js"></script>
+
 <body>
     <header>
       <h1 itemprop="headline">History of Country Performances at the Tour de France<h1>
@@ -27,7 +28,7 @@
                                         <p>France has the largest number of Tour de France titles. Twenty-three French cyclists have won the title 36 times. France won the inaugural race in 1903 and held the winning title for another 5 years until Luxembourg managed to take the win in 1909. France took the title back in 1910 and 1911 before Belgium began to lead the race with wins in 1912-1914 and 1919-1922. France won again in 1923, from 1930-1934, 1937, 1947, 1953-1957, 1961-1964, 1966-1967, 1975, and 1981-1985. France also leads in number of stage wins with 702. France has the most winning streaks (8) and has the second-longest winning streak with 6 consecutive wins from 1903-1908. Interestingly, France has not won the Tour de France since 1985. <br> </p>
         
 
-<button type="button" onClick=run_animation();>Run Animation!</button>
+<button type="button" onClick=run_animation()>Run Animation!</button>
 
 
 <!-- Create a div where the graph will take place -->
@@ -60,6 +61,17 @@ function get_unique_countries(data_) {
 }
 
 
+function get_unique_stage_types(data_) {
+  unique = [];
+  for (var i = 0; i < data_.length; i++) {
+    if( !unique.includes(data_[i].Type)) {
+      unique.push(data_[i].Type);
+    }
+  }
+  return unique;
+}
+
+
 function toDateObj(date_str){
   let parts = date_str.split('-');
   let mydate = new Date(parts[0], parts[1] - 1, parts[2]); 
@@ -69,6 +81,7 @@ function toDateObj(date_str){
 
 var data;
 var country_win_map;
+var country_stage_type_to_win_map;
 var all_possible_dates;
 var animation_runs = 0;
 
@@ -130,8 +143,50 @@ function setUpAxisAndBars(height, width,svg) {
     return [x,y];
 }
 
+function aggregateWinsPerStageType( data ){
+  var countByCountry;
+  data.forEach(function(d){
+	    //group and organize your data as needed here
+      countByCountry = d3.nest()
+      //set the decade as your key
+      .key(function(d) {return d["Winner_Country"];})
+      .key(function(d) {return d["Type"];})
+      //rollup and sum your cat values by decade
+      .rollup(d => d.length)
+      .entries(data);
+    });
+  return countByCountry;
+}
+
+function get_stage_wins_per_country(country_stage_type_to_win_map,country) {
+  returnItem = null;
+  let i = 0;
+  while( i < country_stage_type_to_win_map.length) {
+      console.log( country_stage_type_to_win_map[i]["key"] );
+      if ( country_stage_type_to_win_map[i]["key"] == country) {
+        returnItem = country_stage_type_to_win_map[i]["values"];
+        break;
+    }
+      i = i+1;
+  }
+  return returnItem;
+}
+
+
 function animate(x,y,my_p,svg,height) {
-      let j = 0;
+    let j = 0;
+
+      var tooltip = d3.select("#my_dataviz")
+      .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "white")
+      .style("border", "solid")
+      .style("border-width", "1px")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+
+
     while( j < all_possible_dates.length) {
       let as_of = all_possible_dates[j];
       
@@ -145,8 +200,52 @@ function animate(x,y,my_p,svg,height) {
             });
 
       let day_data = country_win_map.get(as_of.getTime());
-      if (typeof day_data != 'undefined') {    
+      if (typeof day_data != 'undefined') {           
+             var mouseover = function(d) {
+              total_number_of_wins = "";
+              
+              innerHTMLString  = "Country: {d.Winner_Country} <br> Total Number Of Wins: {total_number_of_wins}";             
+              string_to_add = ""
+              stage_wins_per_country = get_stage_wins_per_country(country_stage_type_to_win_map,d.Winner_Country)
+              console.log(stage_wins_per_country);
+              if (typeof day_data != 'undefined') {
+                let day_country_count = day_data.get(d.Winner_Country);
+                if (typeof day_country_count != 'undefined' && day_country_count != 0) {
+                  
+                  let i = 0;
+                  while ( i < stage_wins_per_country.length ) {
+                    let k = stage_wins_per_country[i]["key"];
+                    let v = stage_wins_per_country[i]["value"];
+                    string_to_add = string_to_add + "<br>" + k + ":" + v;
+                    i = i+1;
+                  }                  
+                  total_number_of_wins = day_country_count; 
+                } 
+              }
+              innerHTMLString = innerHTMLString.replace("{d.Winner_Country}",d.Winner_Country);
+              innerHTMLString = innerHTMLString.replace("{total_number_of_wins}",total_number_of_wins);
+              
+              innerHTMLString = innerHTMLString + string_to_add;
+                  
+              tooltip
+                    .html(innerHTMLString)
+                    .style("opacity", 1)
+              }
+
+               var mousemove = function(d) {
+                  tooltip
+                    .style("left", (d3.mouse(this)[0]+90) + "px")
+                    .style("top", (d3.mouse(this)[1]) + "px")
+                }
+                var mouseleave = function(d) {
+                  tooltip
+                    .style("opacity", 0)
+
+                }
         svg.selectAll("rect")
+          .on("mouseover", mouseover)
+          .on("mousemove", mousemove)
+          .on("mouseleave", mouseleave)
           .transition()
           .ease(d3.easeLinear)
           .duration(1000)
@@ -175,6 +274,7 @@ function animate(x,y,my_p,svg,height) {
           .delay(function(d,i){
             return(j*100)
             })
+
       }
       j = j + 1;
     }
@@ -183,9 +283,7 @@ function animate(x,y,my_p,svg,height) {
 var svg;
 var my_p;
 function run_animation() {
-  
- 
- 
+   
   // set the dimensions and margins of the graph
   var margin = {top: 10, right: 30, bottom: 90, left: 40},
       width = 660 - margin.left - margin.right,
@@ -201,18 +299,22 @@ function run_animation() {
     .append("text")
     .text("Loading data for the animation....");
 
-      svg = d3.select("#my_dataviz")
+    svg = d3.select("#my_dataviz")
       .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
         .attr("transform",
-              "translate(" + margin.left + "," + margin.top + ")");
+              "translate(" + margin.left + "," + margin.top + ")");  
+    
+    
     // Parse the Data
     d3.csv("stages_TDF.csv").then(function(data_) {
       
       data = data_;
       parse_data();
+      country_stage_type_to_win_map = aggregateWinsPerStageType(data_);
+      console.log(country_stage_type_to_win_map);
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
@@ -241,6 +343,89 @@ function run_animation() {
 
   }
 };
+
+function draw_stacked_chart() {
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 30, bottom: 20, left: 50},
+        width = 1600 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#my_dataviz")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+    // Parse the Data
+    d3.csv("stages_TDF.csv").then(function(data) {
+
+      // List of subgroups = header of the csv files = soil condition here
+      var subgroups = get_unique_stage_types(data);
+      //console.log(countByCountry);
+      console.log(subgroups);
+      // List of groups = species here = value of the first column called group -> I show them on the X axis
+      var groups = d3.map(data, function(d){return(d.Type)}).keys()
+
+      data.forEach(function(d){
+	    //group and organize your data as needed here
+      countByCountry = d3.nest()
+      //set the decade as your key
+      .key(function(d) {return d["Winner_Country"];})
+      .key(function(d) {return d["Type"];})
+      //rollup and sum your cat values by decade
+      .rollup(d => d.length)
+      .entries(data);
+    });
+    
+    console.log(countByCountry);
+      // Add X axis
+    var x = d3.scaleBand()
+          .domain(groups)
+          .range([0, width])
+          .padding([0.2])
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickSizeOuter(0));
+
+      // Add Y axis
+    var y = d3.scaleLinear()
+        .domain([0, 60])
+        .range([ height, 0 ]);
+      svg.append("g")
+        .call(d3.axisLeft(y));
+
+      // color palette = one color per subgroup
+    var color = d3.scaleOrdinal()
+        .domain(subgroups)
+        .range(['#e41a1c','#377eb8','#4daf4a'])
+
+      //stack the data? --> stack per subgroup
+      var stackedData = d3.stack()
+        .keys(subgroups)
+        (data)
+
+      // Show the bars
+      svg.append("g")
+        .selectAll("g")
+        // Enter in the stack data = loop key per key = group per group
+        .data(stackedData)
+        .enter().append("g")
+          .attr("fill", function(d) { return color(d.key); })
+          .selectAll("rect")
+          // enter a second time = loop subgroup per subgroup to add all rectangles
+          .data(function(d) { return d; })
+          .enter().append("rect")
+            .attr("x", function(d) { return x(d.data.group); })
+            .attr("y", function(d) { return y(d[1]); })
+            .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+            .attr("width",x.bandwidth())
+    })
+};
+
 </script>
 
 </body>
