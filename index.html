@@ -173,10 +173,10 @@ function get_stage_wins_per_country(country_stage_type_to_win_map,country) {
 }
 
 
-function animate(x,y,my_p,svg,height) {
+function animate(x,y,my_p,svg,height,tooltip) {
     let j = 0;
 
-      var tooltip = d3.select("#my_dataviz")
+      /*var tooltip = d3.select("#my_dataviz")
       .append("div")
       .style("opacity", 0)
       .attr("class", "tooltip")
@@ -184,8 +184,7 @@ function animate(x,y,my_p,svg,height) {
       .style("border", "solid")
       .style("border-width", "1px")
       .style("border-radius", "5px")
-      .style("padding", "10px")
-
+      .style("padding", "10px")*/
 
     while( j < all_possible_dates.length) {
       let as_of = all_possible_dates[j];
@@ -282,6 +281,7 @@ function animate(x,y,my_p,svg,height) {
 }
 var svg;
 var my_p;
+var tooltip;
 function run_animation() {
    
   // set the dimensions and margins of the graph
@@ -299,6 +299,7 @@ function run_animation() {
     .append("text")
     .text("Loading data for the animation....");
 
+    
     svg = d3.select("#my_dataviz")
       .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -307,7 +308,16 @@ function run_animation() {
         .attr("transform",
               "translate(" + margin.left + "," + margin.top + ")");  
     
-    
+    tooltip = d3.select("#my_dataviz")
+      .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "white")
+      .style("border", "solid")
+      .style("border-width", "1px")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+
     // Parse the Data
     d3.csv("stages_TDF.csv").then(function(data_) {
       
@@ -321,7 +331,7 @@ function run_animation() {
       animation_runs = animation_runs + 1;
 
     // Animation
-      animate(x,y,my_p,svg,height);
+      animate(x,y,my_p,svg,height,tooltip);
     }).
     catch (function(error) {
       d3.select("#my_dataviz").html = "";    
@@ -331,7 +341,7 @@ function run_animation() {
       y = x_y_arr[1];
     
     // Animation
-      animate(x,y,my_p,svg,height);
+      animate(x,y,my_p,svg,height,tooltip);
     })
   } else {
       svg.selectAll("*").remove();
@@ -339,7 +349,7 @@ function run_animation() {
       x = x_y_arr[0];
       y = x_y_arr[1];
     // Animation
-      animate(x,y,my_p,svg,height);
+      animate(x,y,my_p,svg,height,tooltip);
 
   }
 };
