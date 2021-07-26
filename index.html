@@ -4,6 +4,9 @@
 
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v5.js"></script>
+<!-- Load d3-annotation -->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
 <style>
 
 .bar {
@@ -52,16 +55,17 @@
         
         
                 
-                                        <p>France has the largest number of Tour de France titles. Twenty-three French cyclists have won the title 36 times. France won the inaugural race in 1903 and held the winning title for another 5 years until Luxembourg managed to take the win in 1909. France took the title back in 1910 and 1911 before Belgium began to lead the race with wins in 1912-1914 and 1919-1922. France won again in 1923, from 1930-1934, 1937, 1947, 1953-1957, 1961-1964, 1966-1967, 1975, and 1981-1985. France also leads in number of stage wins with 702. France has the most winning streaks (8) and has the second-longest winning streak with 6 consecutive wins from 1903-1908. Interestingly, France has not won the Tour de France since 1985. <br> </p>
+                                        <p>France has the largest number of Tour de France titles. Twenty-three French cyclists have won the title 36 times. France won the inaugural race in 1903 and held the winning title for another 5 years until Luxembourg managed to take the win in 1909. France took the title back in 1910 and 1911 before Belgium began to lead the race with wins in 1912-1914 and 1919-1922. France won again in 1923, from 1930-1934, 1937, 1947, 1953-1957, 1961-1964, 1966-1967, 1975, and 1981-1985. France also leads in number of stage wins with 702. France has the most winning streaks (8) and has the second-longest winning streak with 6 consecutive wins from 1903-1908. Interestingly, France has not won the Tour de France since 1985. <br><br>
+                                         In the demonstration below you can observe how different countries performed in terms of winning various stages between years 1999 and 2007. During that period of time we can see that Italy was the country to be recon with.  It was leading all other countried in stage wins. However that turned around in 2017, when France took over the lead.
+By hovering with the mouse on the country specific bar, it is possible to see a further break-down, with regards to the type of stages that the countr has won during that period of time.</p>
         
 
 <button type="button" onClick=run_animation()>Run Animation!</button>
 
 
 <!-- Create a div where the graph will take place -->
-<div id="my_dataviz"></div>
-
-
+<div id="my_dataviz" ></div>
+<br><p>    </p>
 <script>
 
 function get_number_of_wins_up_to_date (up_to_date_obj_,country_,data_) {
@@ -151,7 +155,7 @@ function setUpAxisAndBars(height, width,svg) {
 
     // Add Y axis
     var y = d3.scaleLinear()
-      .domain([0, 100])
+      .domain([0, 80])
       .range([ height, 0]);
     svg.append("g")
       .call(d3.axisLeft(y));
@@ -200,7 +204,7 @@ function get_stage_wins_per_country(country_stage_type_to_win_map,country) {
 }
 
 
-function animate(x,y,my_p,svg,height,tooltip) {
+function animate(x,y,my_p,svg,height,tooltip,makeAnnotations) {
     let j = 0;
 
      while( j < all_possible_dates.length) {
@@ -213,7 +217,39 @@ function animate(x,y,my_p,svg,height,tooltip) {
       .text(as_of.getFullYear())
       .delay(function(d,i){
             return(j*100)
-            });
+        });
+
+      d3.select('.annotation-group')
+      .transition()
+      .duration(1000)
+      .tween('updateAnno',function(d){
+      
+          if(as_of.getFullYear() == 1998) {
+            //annotations[0].note.title = "1998";
+            annotations[0].note.label = "1998 - Italy Starts to Take a lead";
+          } else if(as_of.getFullYear() == 2000) {
+            //annotations[0].note.title = "2000";
+            annotations[0].note.label = "2000 - Germany and Italy are neck to neck";
+          }else if(as_of.getFullYear() == 2001 ) {
+            //annotations[0].note.title = "2001";
+            annotations[0].note.label = "2001 - USA starts to get some wins";
+          }else if(as_of.getFullYear() == 2008 ) {
+            //annotations[0].note.title = "2008";
+            annotations[0].note.label = "2008 - Great Britain Accelerates and Spain emerges as one of the dominant players";
+          }else if(as_of.getFullYear() == 2013 ) {
+            //annotations[0].note.title = "2013";
+            annotations[0].note.label = "2013 - Frances catches up to Italy. Great Britain Catched Germany";
+          }else{
+            annotations[0].note.label = "";
+           //annotations[0].note.title = null;
+          }
+        makeAnnotations.annotations(annotations)
+        makeAnnotations.updateText()
+      })
+      .delay(function(d,i){
+            return(j*100)
+        });
+
 
       let day_data = country_win_map.get(as_of.getTime());
       if (typeof day_data != 'undefined') {           
@@ -247,9 +283,8 @@ function animate(x,y,my_p,svg,height,tooltip) {
                   tooltip
                         .html(innerHTMLString)
                         .style("opacity", 1)
+                        .style("background",'#BCC5F7');
 
-                 /* d3.select(this).style("stroke", "navy");
-		              d3.select(".bar").transition().duration(100).style("fill-opacity", .5);*/
               }
 
                var mousemove = function(d) {
@@ -295,7 +330,6 @@ function animate(x,y,my_p,svg,height,tooltip) {
           .delay(function(d,i){
             return(j*100)
             })
-
       }
       j = j + 1;
     }
@@ -304,6 +338,22 @@ function animate(x,y,my_p,svg,height,tooltip) {
 var svg;
 var my_p;
 var tooltip;
+var makeAnnotations;
+var  annotations = [
+{
+          note: {
+            label: "",
+            title: "",
+
+            align: "middle"
+          },
+          color: ["purple"],
+          x: 350,
+          y: 100,
+          dy: 100,
+          dx: 100
+  }
+]
 function run_animation() {
    
   // set the dimensions and margins of the graph
@@ -312,13 +362,18 @@ function run_animation() {
       height = 650 - margin.top - margin.bottom;
 
   // append the svg object to the body of the page
-
+  
+         
+  makeAnnotations = d3.annotation().annotations(annotations)
+  makeAnnotations.disable(['connector']) ;
   if( animation_runs == 0 ) { 
 
     my_p = d3.select("#my_dataviz")
     .append("p")
     .attr("id", "updateable_p")
     .append("text")
+    .style("font-size", "34px")
+    .style("font-weight", "bold")
     .text("Loading data for the animation....");
 
     
@@ -328,7 +383,10 @@ function run_animation() {
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
         .attr("transform",
-              "translate(" + margin.left + "," + margin.top + ")");  
+              "translate(" + margin.left + "," + margin.top + ")"); 
+    svg.append("g")
+    .attr('class', 'annotation-group')
+    .call(makeAnnotations) 
     
     tooltip = d3.select("#my_dataviz")
       .append("div")
@@ -353,25 +411,25 @@ function run_animation() {
       animation_runs = animation_runs + 1;
 
     // Animation
-      animate(x,y,my_p,svg,height,tooltip);
+      animate(x,y,my_p,svg,height,tooltip,makeAnnotations);
     }).
     catch (function(error) {
-      d3.select("#my_dataviz").html = "";    
-      svg.selectAll("*").remove();
+      //d3.select("#my_dataviz").html = "";    
+      //svg.selectAll("*").remove();
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
     
     // Animation
-      animate(x,y,my_p,svg,height,tooltip);
+      animate(x,y,my_p,svg,height,tooltip,makeAnnotations);
     })
   } else {
-      svg.selectAll("*").remove();
+      //svg.selectAll("*").remove();
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
     // Animation
-      animate(x,y,my_p,svg,height,tooltip);
+      animate(x,y,my_p,svg,height,tooltip,makeAnnotations);
 
   }
 };
