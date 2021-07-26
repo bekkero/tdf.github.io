@@ -414,8 +414,9 @@ function run_animation() {
       animate(x,y,my_p,svg,height,tooltip,makeAnnotations);
     }).
     catch (function(error) {
-      //d3.select("#my_dataviz").html = "";    
-      //svg.selectAll("*").remove();
+      console.log(error);
+      d3.select("#my_dataviz").html = "";    
+      svg.selectAll("*").remove();
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
@@ -424,7 +425,11 @@ function run_animation() {
       animate(x,y,my_p,svg,height,tooltip,makeAnnotations);
     })
   } else {
-      //svg.selectAll("*").remove();
+    svg.selectAll("*").remove();
+    d3.select("#my_dataviz").html = "";   
+    svg.append("g")
+    .attr('class', 'annotation-group')
+    .call(makeAnnotations) 
       x_y_arr = setUpAxisAndBars(height,width,svg);
       x = x_y_arr[0];
       y = x_y_arr[1];
